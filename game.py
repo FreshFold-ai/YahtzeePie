@@ -1,43 +1,213 @@
+import random
+from dice import Dice
+from scorecard import Scorecard
+
 class Game:
-    """Manages the logic of playing Yahtzee."""
-    
-    ROUNDS = 13
-    ROLLS_PER_TURN = 3
-    
+    current_round = 0 
+    dice_values = [0] * 5
+    sorted_dice = [0] * 5
+    frequency = [0] * 6  
+    players = Scorecard(2)  
+    die = [Dice() for _ in range(5)]
+
     def __init__(self, players):
-        """Initialize a new game with the given players.
-        
-        Args:
-            players: List of Player objects
-        """
-        self.players = players
-        self.current_round = 0
-        self.current_player_index = 0
-        self.current_turn_rolls = 0
-    
-    def is_game_over(self):
-        """Check if the game has completed all rounds."""
-        return self.current_round >= self.ROUNDS
-    
-    def next_turn(self):
-        """Move to the next player's turn."""
-        self.current_player_index = (self.current_player_index + 1) % len(self.players)
-        if self.current_player_index == 0:
-            self.current_round += 1
-        self.current_turn_rolls = 0
+        self.players = Scorecard(players)
+        self.die = [Dice() for _ in range(5)]
+        self.roll_dice()
+        self.set_dice_values()
+        self.set_sorted_dice()
+        self.set_frequency()
     
     def roll_dice(self):
-        """Execute a roll for the current player.
-        
-        Returns:
-            List of dice values rolled
-        """
-        if self.current_turn_rolls >= self.ROLLS_PER_TURN:
-            raise ValueError("No more rolls available this turn")
-        
-        self.current_turn_rolls += 1
-        return self.players[self.current_player_index].roll()
+        for dice in self.die:
+            dice.roll()
+        self.set_dice_values()
     
-    def get_current_player(self):
-        """Get the player whose turn it is."""
-        return self.players[self.current_player_index]
+    def get_dice_values(self):
+        return [dice.face_value for dice in self.die]
+    
+    def get_sorted_dice(self):
+        return sorted(self.get_dice_values())
+    
+    def get_frequency(self):
+        return self.frequency
+    
+    def set_dice_values(self):
+        for i in range(5):
+            self.dice_values[i] = self.die[i].face_value
+
+    def set_sorted_dice(self):
+        self.sorted_dice = sorted(self.dice_values)
+    
+    def set_frequency(self):
+        self.frequency = [0] * 6
+        for value in self.dice_values:
+            self.frequency[value - 1] += 1
+
+    def play(self):
+        """
+        Main game loop: 13 rounds, each player takes a turn per round.
+        Each turn consists of 3 dice rolls with the ability to keep dice between rolls.
+        """
+        for round_num in range(1, 14):  # 13 rounds total
+            print(f"\n{'='*60}")
+            print(f"ROUND {round_num}")
+            print(f"{'='*60}")
+            for player_idx in range(self.players.num_players):
+                print(f"\n--- Player {player_idx + 1}'s Turn (Round {round_num}) ---")
+                kept_indices = set()  # Reset kept dice for new turn
+                for roll_num in range(1, 4):
+                    print(f"\nRoll {roll_num}/3:")
+                    if roll_num == 1:
+                        self.roll_dice()
+                    else:
+                        self.roll_non_kept_dice(kept_indices)
+                    self.display_dice(kept_indices)
+                    if roll_num < 3:
+                        new_kept = self.get_kept_dice_input(kept_indices)
+                        # Only dice re-selected remain kept; others become rollable
+                        kept_indices = new_kept
+                print(f"\nFinal dice: {self.get_dice_values()}")
+                slot_idx = self.get_scoring_slot_input(player_idx)
+                score = self.calculate_score(slot_idx)
+                self.players.set_score(player_idx, slot_idx, score)
+                print(f"Player {player_idx + 1} scored {score} points in slot {slot_idx + 1}!")
+    
+    def roll_non_kept_dice(self, kept_indices):
+        """Roll only the dice that are not being kept."""
+        for i in range(5):
+            if i not in kept_indices:
+                self.die[i].roll()
+        self.set_dice_values()
+        self.set_sorted_dice()
+        self.set_frequency()
+    
+    def display_dice(self, kept_indices):
+        """Display current dice values with indicators for kept dice (1-based index)."""
+        values = self.get_dice_values()
+        display = []
+        for i, value in enumerate(values):
+            idx_display = str(i + 1)
+            if i in kept_indices:
+                display.append(f"[{value}:{idx_display}]")  # Brackets indicate kept
+            else:
+                display.append(f" {value}:{idx_display} ")
+        print(f"Dice: {' '.join(display)}")
+        print(f"(Kept dice shown in brackets, numbers are 1-5)")
+    
+    def get_kept_dice_input(self, current_kept):
+        """
+        Ask player which dice to toggle keep status (1-5 for user, internally 0-4).
+        Selecting a die toggles its kept status: if kept, it becomes rollable; if rollable, it becomes kept.
+        Returns set of indices (0-4) of dice to keep.
+        """
+        kept = set(current_kept)
+        while True:
+            try:
+                user_input = input(
+                    "Enter dice numbers to toggle keep status (1-5, space-separated), or press Enter to keep current: "
+                ).strip()
+                if not user_input:
+                    return kept
+                indices = [int(x) - 1 for x in user_input.split()]
+                if all(0 <= idx < 5 for idx in indices):
+                    for idx in indices:
+                        if idx in kept:
+                            kept.remove(idx)  # Unkeep if already kept
+                        else:
+                            kept.add(idx)     # Keep if not already kept
+                    return kept
+                else:
+                    print("Invalid numbers. Please enter numbers 1-5.")
+            except ValueError:
+                print("Invalid input. Please enter space-separated numbers (e.g., 1 3 5).")
+
+    def get_scoring_slot_input(self, player_idx):
+        """
+        Ask player which scoring category/slot to use (0-12).
+        """
+        player_card = self.players.get_player_card(player_idx)
+        
+        while True:
+            try:
+                slot = int(input(
+                    f"Choose a scoring slot (0-12) for Player {player_idx + 1}: "
+                ))
+                
+                if 0 <= slot < 13:
+                    if player_card[slot] != 0:
+                        print(f"Slot {slot + 1} already used! Choose another.")
+                        continue
+                    return slot
+                else:
+                    print("Invalid slot. Please enter 0-12.")
+            except ValueError:
+                print("Invalid input. Please enter a number between 0 and 12.")
+    
+    def calculate_score(self, slot_idx):
+        """
+        Calculate the score for a given category/slot.
+        Slots 0-5: Ones through Sixes (sum of dice with that value)
+        Slots 6-12: Various Yahtzee categories
+        """
+        values = self.get_dice_values()
+        sorted_values = self.get_sorted_dice()
+        freq = self.get_frequency()
+        
+        # Slots 0-5: Number categories (Ones, Twos, Threes, etc.)
+        if slot_idx < 6:
+            return sum(v for v in values if v == slot_idx + 1)
+        
+        # Slot 6: Three of a Kind
+        elif slot_idx == 6:
+            if any(f >= 3 for f in freq):
+                return sum(values)
+            return 0
+        
+        # Slot 7: Four of a Kind
+        elif slot_idx == 7:
+            if any(f >= 4 for f in freq):
+                return sum(values)
+            return 0
+        
+        # Slot 8: Full House
+        elif slot_idx == 8:
+            if sorted(freq).count(0) == 4 and (3 in freq and 2 in freq):
+                return 25
+            return 0
+        
+        # Slot 9: Small Straight (4 consecutive numbers)
+        elif slot_idx == 9:
+            if self.is_small_straight(sorted_values):
+                return 30
+            return 0
+        
+        # Slot 10: Large Straight (5 consecutive numbers)
+        elif slot_idx == 10:
+            if self.is_large_straight(sorted_values):
+                return 40
+            return 0
+        
+        # Slot 11: Yahtzee (all 5 dice the same)
+        elif slot_idx == 11:
+            if max(freq) == 5:
+                return 50
+            return 0
+        
+        # Slot 12: Chance (sum of all dice)
+        elif slot_idx == 12:
+            return sum(values)
+        
+        return 0
+    
+    def is_small_straight(self, sorted_values):
+        """Check if dice contain a small straight (4 consecutive)."""
+        straights = [[1, 2, 3, 4], [2, 3, 4, 5], [3, 4, 5, 6]]
+        for straight in straights:
+            if all(num in sorted_values for num in straight):
+                return True
+        return False
+    
+    def is_large_straight(self, sorted_values):
+        """Check if dice contain a large straight (5 consecutive)."""
+        return sorted_values == [1, 2, 3, 4, 5] or sorted_values == [2, 3, 4, 5, 6]

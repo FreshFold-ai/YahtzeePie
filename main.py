@@ -1,5 +1,6 @@
 from dice import Dice
 from scorecard import Scorecard
+from game import Game
 
 class YahtzeeGame:
     def __init__(self):
@@ -7,14 +8,17 @@ class YahtzeeGame:
 
 
 if __name__ == "__main__":
-    d = Dice()
-    print(f"Initial roll: {d.face_value}")
+    while True:
+        try:
+            players = int(input("How many players will be playing? ").strip())
+            if players >= 1:
+                break
+            print("Please enter an integer value of at least 1.")
+        except ValueError:
+            print("Invalid input — enter a single integer value.")
+    g = Game(players)
+    print(f"Starting a game of Yahtzee with {players} players!")
+    g.play()
+    
 
-    s = Scorecard(2)
-    s.set_score(0, 2, 25)
-    s.set_score(1, 5, 30)
-    s.set_score(0, 1, 15)
-    s.set_score(1, 12, 20)
-    print(f"Player 0: {s.get_player_card(0)}")
-    print(f"Player 1: {s.get_player_card(1)}")
 
