@@ -83,17 +83,23 @@ class Game:
         self.set_frequency()
     
     def display_dice(self, kept_indices):
-        """Display current dice values with indicators for kept dice (1-based index)."""
+        """Display current dice values with indices aligned below."""
         values = self.get_dice_values()
-        display = []
+        values_line = ""
+        indices_line = ""
+        
         for i, value in enumerate(values):
-            idx_display = str(i + 1)
             if i in kept_indices:
-                display.append(f"[{value}:{idx_display}]")  # Brackets indicate kept
+                values_line += f"[{value}] "
+                indices_line += f"[{i+1}] "
             else:
-                display.append(f" {value}:{idx_display} ")
-        print(f"Dice: {' '.join(display)}")
-        print(f"(Kept dice shown in brackets, numbers are 1-5)")
+                values_line += f" {value}  "
+                indices_line += f" {i+1}  "
+        
+        print("Values: " + values_line)
+        print("Dice#:  " + indices_line)
+        if kept_indices:
+            print(f"(Kept: {sorted([i+1 for i in kept_indices])})")
     
     def get_kept_dice_input(self, current_kept):
         """
