@@ -64,24 +64,23 @@ class Game:
                         self.roll_non_kept_dice(kept_indices)
                     self.display_dice(kept_indices)
                     if roll_num < 3:
-                        new_kept = self.get_kept_dice_input(kept_indices)
-                        # Only dice re-selected remain kept; others become rollable
-                        kept_indices = new_kept
+                        reroll_indices = self.get_reroll_dice_input()
+                        # Update kept indices: unkeep rerolled dice
+                        for idx in reroll_indices:
+                            kept_indices.discard(idx)
+                        # Roll the reroll dice
+                        for idx in reroll_indices:
+                            self.die[idx].roll()
+                        self.set_dice_values()
+                        self.set_sorted_dice()
+                        self.set_frequency()
                 print(f"\nFinal dice: {self.get_dice_values()}")
                 slot_idx = self.get_scoring_slot_input(player_idx)
                 score = self.calculate_score(slot_idx)
                 self.players.set_score(player_idx, slot_idx, score)
                 print(f"Player {player_idx + 1} scored {score} points in slot {slot_idx + 1}!")
     
-    def roll_non_kept_dice(self, kept_indices):
-        """Roll only the dice that are not being kept."""
-        for i in range(5):
-            if i not in kept_indices:
-                self.die[i].roll()
-        self.set_dice_values()
-        self.set_sorted_dice()
-        self.set_frequency()
-    
+
     def display_dice(self, kept_indices):
         """Display current dice values with indices aligned below."""
         values = self.get_dice_values()
@@ -101,28 +100,22 @@ class Game:
         if kept_indices:
             print(f"(Kept: {sorted([i+1 for i in kept_indices])})")
     
-    def get_kept_dice_input(self, current_kept):
+    def get_reroll_dice_input(self):
         """
-        Ask player which dice to toggle keep status (1-5 for user, internally 0-4).
-        Selecting a die toggles its kept status: if kept, it becomes rollable; if rollable, it becomes kept.
-        Returns set of indices (0-4) of dice to keep.
+        Ask player which dice to reroll (1-5 for user, internally 0-4).
+        Returns set of indices (0-4) of dice to reroll.
+        Pressing Enter with no input keeps all dice (rerolls none).
         """
-        kept = set(current_kept)
         while True:
             try:
                 user_input = input(
-                    "Enter dice numbers to toggle keep status (1-5, space-separated), or press Enter to keep current: "
+                    "Enter dice numbers to reroll (1-5, space-separated), or press Enter to keep all: "
                 ).strip()
                 if not user_input:
-                    return kept
+                    return set()  # Keep all dice
                 indices = [int(x) - 1 for x in user_input.split()]
                 if all(0 <= idx < 5 for idx in indices):
-                    for idx in indices:
-                        if idx in kept:
-                            kept.remove(idx)  # Unkeep if already kept
-                        else:
-                            kept.add(idx)     # Keep if not already kept
-                    return kept
+                    return set(indices)
                 else:
                     print("Invalid numbers. Please enter numbers 1-5.")
             except ValueError:
