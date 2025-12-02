@@ -123,22 +123,32 @@ class Game:
         """Display the current scorecard for a player."""
         player_card = self.players.get_player_card(player_idx)
         categories = [
-            "Ones", "Twos", "Threes", "Fours", "Fives", "Sixes",
-            "3 of a Kind", "4 of a Kind", "Full House", "Small Straight",
-            "Large Straight", "Yahtzee", "Chance"
+            "Ones - Sum of all ones",
+            "Twos - Sum of all twos",
+            "Threes - Sum of all threes",
+            "Fours - Sum of all fours",
+            "Fives - Sum of all fives",
+            "Sixes - Sum of all sixes",
+            "3 of a Kind - Sum of all dice",
+            "4 of a Kind - Sum of all dice",
+            "Full House - 2 of one kind + 3 of another (25 pts)",
+            "Small Straight - 4 consecutive numbers (30 pts)",
+            "Large Straight - 5 consecutive numbers (40 pts)",
+            "Yahtzee - All 5 dice the same (50 pts)",
+            "Chance - Sum of all dice"
         ]
         
-        print(f"\n{'='*70}")
+        print(f"\n{'='*80}")
         print(f"Player {player_idx + 1} Scorecard")
-        print(f"{'='*70}")
-        print(f"{'Slot':<5} {'Category':<20} {'Score':<8} {'Status':<12}")
-        print(f"{'-'*70}")
+        print(f"{'='*80}")
+        print(f"{'Slot':<5} {'Category':<50} {'Score':<8} {'Status':<12}")
+        print(f"{'-'*80}")
         for i, category in enumerate(categories):
             score = player_card[i]
             status = "✓ OPEN" if score == 0 else "✗ USED"
             score_display = str(score) if score != 0 else "-"
-            print(f"{i:<5} {category:<20} {score_display:<8} {status:<12}")
-        print(f"{'='*70}")
+            print(f"{i:<5} {category:<50} {score_display:<8} {status:<12}")
+        print(f"{'='*80}")
     
     def get_scoring_slot_input(self, player_idx):
         """
