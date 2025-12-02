@@ -123,19 +123,22 @@ class Game:
         """Display the current scorecard for a player."""
         player_card = self.players.get_player_card(player_idx)
         categories = [
-            "# of Ones", "# of Twos", "# of Threes", "# of Fours", "# of Fives", "# of Sixes",
-            "3 of a Kind", "4 of a Kind", "Full House (2&3 of kind)", "Small Straight (4 consecutive values)",
-            "Large Straight (5 consecutive values)", "Yahtzee (5 of a kind)", "Chance"
+            "Ones", "Twos", "Threes", "Fours", "Fives", "Sixes",
+            "3 of a Kind", "4 of a Kind", "Full House", "Small Straight",
+            "Large Straight", "Yahtzee", "Chance"
         ]
         
-        print(f"\n--- Player {player_idx + 1} Scorecard ---")
-        print(f"{'Slot':<3} {'Category':<18} {'Score':<8} {'Available'}")
-        print("-" * 50)
+        print(f"\n{'='*70}")
+        print(f"Player {player_idx + 1} Scorecard")
+        print(f"{'='*70}")
+        print(f"{'Slot':<5} {'Category':<20} {'Score':<8} {'Status':<12}")
+        print(f"{'-'*70}")
         for i, category in enumerate(categories):
             score = player_card[i]
-            available = "✓" if score == 0 else "✗"
+            status = "✓ OPEN" if score == 0 else "✗ USED"
             score_display = str(score) if score != 0 else "-"
-            print(f"{i:<3} {category:<18} {score_display:<8} {available}")
+            print(f"{i:<5} {category:<20} {score_display:<8} {status:<12}")
+        print(f"{'='*70}")
     
     def get_scoring_slot_input(self, player_idx):
         """
