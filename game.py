@@ -60,8 +60,6 @@ class Game:
                     print(f"\nRoll {roll_num}/3:")
                     if roll_num == 1:
                         self.roll_dice()
-                    else:
-                        self.roll_non_kept_dice(kept_indices)
                     self.display_dice(kept_indices)
                     if roll_num < 3:
                         reroll_indices = self.get_reroll_dice_input()
