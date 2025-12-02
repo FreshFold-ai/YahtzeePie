@@ -119,21 +119,42 @@ class Game:
             except ValueError:
                 print("Invalid input. Please enter space-separated numbers (e.g., 1 3 5).")
 
+    def display_scorecard(self, player_idx):
+        """Display the current scorecard for a player."""
+        player_card = self.players.get_player_card(player_idx)
+        categories = [
+            "Ones", "Twos", "Threes", "Fours", "Fives", "Sixes",
+            "3 of a Kind", "4 of a Kind", "Full House", "Small Straight",
+            "Large Straight", "Yahtzee", "Chance"
+        ]
+        
+        print(f"\n--- Player {player_idx + 1} Scorecard ---")
+        print(f"{'Slot':<3} {'Category':<18} {'Score':<8} {'Available'}")
+        print("-" * 50)
+        for i, category in enumerate(categories):
+            score = player_card[i]
+            available = "✓ OPEN" if score == 0 else "✗ USED"
+            score_display = str(score) if score != 0 else "-"
+            print(f"{i:<3} {category:<18} {score_display:<8} {available}")
+    
     def get_scoring_slot_input(self, player_idx):
         """
         Ask player which scoring category/slot to use (0-12).
+        Displays the scorecard first.
         """
         player_card = self.players.get_player_card(player_idx)
+        self.display_scorecard(player_idx)
         
         while True:
             try:
                 slot = int(input(
-                    f"Choose a scoring slot (0-12) for Player {player_idx + 1}: "
+                    f"\nChoose an open scoring slot (0-12) for Player {player_idx + 1}: "
                 ))
                 
                 if 0 <= slot < 13:
                     if player_card[slot] != 0:
-                        print(f"Slot {slot + 1} already used! Choose another.")
+                        print(f"❌ Slot {slot} already used! Choose an open slot.")
+                        self.display_scorecard(player_idx)
                         continue
                     return slot
                 else:
