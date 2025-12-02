@@ -123,9 +123,9 @@ class Game:
         """Display the current scorecard for a player."""
         player_card = self.players.get_player_card(player_idx)
         categories = [
-            "Ones", "Twos", "Threes", "Fours", "Fives", "Sixes",
-            "3 of a Kind", "4 of a Kind", "Full House", "Small Straight",
-            "Large Straight", "Yahtzee", "Chance"
+            "# of Ones", "# of Twos", "# of Threes", "# of Fours", "# of Fives", "# of Sixes",
+            "3 of a Kind", "4 of a Kind", "Full House (2&3 of kind)", "Small Straight (4 consecutive values)",
+            "Large Straight (5 consecutive values)", "Yahtzee (5 of a kind)", "Chance"
         ]
         
         print(f"\n--- Player {player_idx + 1} Scorecard ---")
