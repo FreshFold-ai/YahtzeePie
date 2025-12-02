@@ -133,7 +133,7 @@ class Game:
         print("-" * 50)
         for i, category in enumerate(categories):
             score = player_card[i]
-            available = "✓ OPEN" if score == 0 else "✗ USED"
+            available = "✓" if score == 0 else "✗"
             score_display = str(score) if score != 0 else "-"
             print(f"{i:<3} {category:<18} {score_display:<8} {available}")
     
