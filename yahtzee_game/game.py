@@ -80,7 +80,6 @@ class Game:
     
 
     def display_dice(self, kept_indices):
-        """Display current dice values with indices aligned below."""
         values = self.get_dice_values()
         values_line = ""
         indices_line = ""
@@ -99,11 +98,6 @@ class Game:
             print(f"(Kept: {sorted([i+1 for i in kept_indices])})")
     
     def get_reroll_dice_input(self):
-        """
-        Ask player which dice to reroll (1-5 for user, internally 0-4).
-        Returns set of indices (0-4) of dice to reroll.
-        Pressing Enter with no input keeps all dice (rerolls none).
-        """
         while True:
             try:
                 user_input = input(
@@ -120,7 +114,6 @@ class Game:
                 print("Invalid input. Please enter space-separated numbers (e.g., 1 3 5).")
 
     def display_scorecard(self, player_idx):
-        """Display the current scorecard for a player."""
         player_card = self.players.get_player_card(player_idx)
         categories = [
             "Ones - Sum of all ones",
@@ -151,10 +144,7 @@ class Game:
         print(f"{'='*80}")
     
     def get_scoring_slot_input(self, player_idx):
-        """
-        Ask player which scoring category/slot to use (0-12).
-        Displays the scorecard first.
-        """
+        
         player_card = self.players.get_player_card(player_idx)
         self.display_scorecard(player_idx)
         
