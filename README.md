@@ -29,11 +29,32 @@ cd yahtzee_scala
 cd yahtzee_analysis
 ./run_analysis.sh
 ```
-- Performance metrics (time & memory)
-- Readability analysis (LOC & complexity)
+- Performance metrics (33 methods profiled: 0.002-0.6ms range)
+- Readability analysis (300 lines: 242 code, 10 comments)
 - Debugging metrics (pylint & coverage)
 - Visual charts & graphs
 - See [yahtzee_analysis/README.md](yahtzee_analysis/README.md)
+
+### Scala Implementation Analysis
+```bash
+cd yahtzee_scala_analysis
+./run_analysis.sh
+```
+- Performance metrics (30 methods profiled: 0.0003-0.02ms range)
+- Readability analysis (263 lines: 212 code, 0 comments)
+- Functional patterns (100% immutability, pure functions)
+- Test coverage (30 tests, 100% pass rate)
+- Visual charts & graphs
+- See [yahtzee_scala_analysis/README.md](yahtzee_scala_analysis/README.md)
+
+### Comparison
+Both analysis frameworks provide:
+- Execution time and memory profiling
+- Code structure metrics
+- Quality and testing statistics
+- Beautiful PNG visualizations
+
+Compare OOP vs Functional approaches across multiple dimensions!
 
 ## Testing
 
