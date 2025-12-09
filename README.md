@@ -22,6 +22,19 @@ cd yahtzee_scala
 - Pure functions, immutable data
 - See [yahtzee_scala/README.md](yahtzee_scala/README.md)
 
+## Analysis
+
+### Python Implementation Analysis
+```bash
+cd yahtzee_analysis
+./run_analysis.sh
+```
+- Performance metrics (time & memory)
+- Readability analysis (LOC & complexity)
+- Debugging metrics (pylint & coverage)
+- Visual charts & graphs
+- See [yahtzee_analysis/README.md](yahtzee_analysis/README.md)
+
 ## Testing
 
 ```bash
