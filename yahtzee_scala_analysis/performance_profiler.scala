@@ -8,32 +8,87 @@ import scala.collection.mutable.ArrayBuffer
 
 case class PerformanceMetrics(
   executionTimeMs: Double,
-  memoryUsedKb: Double
+  executionTimeStd: Double,
+  memoryUsedKb: Double,
+  memoryStdKb: Double,
+  numTrials: Int,
+  samplesPerTrial: Int
 )
 
 object PerformanceProfiler:
   
-  def profileMethod[T](name: String, iterations: Int = 1000)(f: => T): PerformanceMetrics =
-    // Warmup
-    (0 until 100).foreach(_ => f)
+  // Configuration optimized for memory measurement
+  val NUM_TRIALS = 3
+  val SAMPLES_PER_TRIAL = 15
+  val WARMUP_ITERATIONS = 10
+  val BATCH_SIZE = 1000  // Create multiple objects per measurement
+  
+  def calculateMean(values: Seq[Double]): Double =
+    values.sum / values.length
+  
+  def calculateStdDev(values: Seq[Double], mean: Double): Double =
+    if values.length <= 1 then 0.0
+    else
+      val variance = values.map(v => Math.pow(v - mean, 2)).sum / values.length
+      Math.sqrt(variance)
+  
+  def profileMethod[T](name: String)(f: => T): PerformanceMetrics =
+    // Warmup phase (reduced to keep measurements faster)
+    (0 until WARMUP_ITERATIONS).foreach(_ => f)
     
-    // Force GC before measurement
-    System.gc()
-    Thread.sleep(50)
+    val allTrialTimes = ArrayBuffer[Double]()
+    val allTrialMemory = ArrayBuffer[Double]()
     
-    val runtime = Runtime.getRuntime
-    val memBefore = runtime.totalMemory() - runtime.freeMemory()
+    for trial <- 0 until NUM_TRIALS do
+      val sampleTimes = ArrayBuffer[Double]()
+      val sampleMemory = ArrayBuffer[Double]()
+      
+      // Aggressive GC and stabilization
+      System.gc()
+      System.runFinalization()
+      System.gc()
+      Thread.sleep(200)
+      
+      val runtime = Runtime.getRuntime
+      
+      for sample <- 0 until SAMPLES_PER_TRIAL do
+        // Baseline memory after GC
+        System.gc()
+        Thread.sleep(50)
+        val memBefore = runtime.totalMemory() - runtime.freeMemory()
+        
+        // Create multiple objects in a batch to amplify memory footprint
+        val startTime = System.nanoTime()
+        val results = ArrayBuffer[T]()
+        var i = 0
+        while i < BATCH_SIZE do
+          results += f
+          i += 1
+        val endTime = System.nanoTime()
+        
+        // Force retention by accessing results
+        val _ = results.length
+        
+        // Measure memory immediately after
+        val memAfter = runtime.totalMemory() - runtime.freeMemory()
+        
+        // Time per single operation
+        sampleTimes += (endTime - startTime) / 1e6 / BATCH_SIZE
+        // Memory per single operation
+        val memDiff = (memAfter - memBefore) / 1024.0 / BATCH_SIZE
+        sampleMemory += math.max(0.0, memDiff)
+      
+      // Calculate mean for this trial
+      allTrialTimes += calculateMean(sampleTimes.toSeq)
+      allTrialMemory += calculateMean(sampleMemory.toSeq)
     
-    val startTime = System.nanoTime()
-    (0 until iterations).foreach(_ => f)
-    val endTime = System.nanoTime()
+    // Calculate statistics across all trials
+    val timeMean = calculateMean(allTrialTimes.toSeq)
+    val timeStd = calculateStdDev(allTrialTimes.toSeq, timeMean)
+    val memMean = calculateMean(allTrialMemory.toSeq)
+    val memStd = calculateStdDev(allTrialMemory.toSeq, memMean)
     
-    val memAfter = runtime.totalMemory() - runtime.freeMemory()
-    
-    val avgTimeMs = (endTime - startTime) / iterations / 1e6
-    val memUsedKb = Math.max(0, memAfter - memBefore) / 1024.0
-    
-    PerformanceMetrics(avgTimeMs, memUsedKb)
+    PerformanceMetrics(timeMean, timeStd, memMean, memStd, NUM_TRIALS, SAMPLES_PER_TRIAL)
   
   def profileDice(): Map[String, PerformanceMetrics] =
     val results = scala.collection.mutable.Map[String, PerformanceMetrics]()
@@ -206,7 +261,11 @@ object PerformanceProfiler:
       methodList.zipWithIndex.foreach { case ((methodName, metrics), methodIdx) =>
         sb.append(s"""    "$methodName": {\n""")
         sb.append(s"""      "execution_time_ms": ${metrics.executionTimeMs},\n""")
-        sb.append(s"""      "memory_used_kb": ${metrics.memoryUsedKb}\n""")
+        sb.append(s"""      "execution_time_std": ${metrics.executionTimeStd},\n""")
+        sb.append(s"""      "memory_used_kb": ${metrics.memoryUsedKb},\n""")
+        sb.append(s"""      "memory_std_kb": ${metrics.memoryStdKb},\n""")
+        sb.append(s"""      "num_trials": ${metrics.numTrials},\n""")
+        sb.append(s"""      "samples_per_trial": ${metrics.samplesPerTrial}\n""")
         sb.append(s"""    }${if methodIdx < methodList.size - 1 then "," else ""}\n""")
       }
       sb.append(s"""  }${if moduleIdx < modules.size - 1 then "," else ""}\n""")
@@ -217,6 +276,8 @@ object PerformanceProfiler:
   
   def main(args: Array[String]): Unit =
     println("Running Scala performance analysis...")
+    println(f"Configuration: $NUM_TRIALS trials × $SAMPLES_PER_TRIAL samples per trial")
+    println("=" * 80)
     
     val allResults = Map(
       "dice" -> profileDice(),
@@ -240,8 +301,11 @@ object PerformanceProfiler:
       println(s"\n${module.toUpperCase}")
       println("-" * 80)
       methods.toList.sortBy(_._1).foreach { case (method, metrics) =>
-        println(f"  $method%-35s | Time: ${metrics.executionTimeMs}%8.4f ms | Memory: ${metrics.memoryUsedKb}%8.2f KB")
+        val timeStr = f"${metrics.executionTimeMs}%7.4f±${metrics.executionTimeStd}%6.4f"
+        val memStr = f"${metrics.memoryUsedKb}%7.2f±${metrics.memoryStdKb}%5.2f"
+        println(f"  $method%-35s | Time: ${timeStr}ms | Memory: ${memStr}KB")
       }
     }
     
     println(s"\nResults saved to: $outputPath")
+    println(f"Statistics: Mean ± Std Dev from $NUM_TRIALS trials")

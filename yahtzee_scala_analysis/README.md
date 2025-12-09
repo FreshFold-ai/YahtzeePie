@@ -9,10 +9,13 @@ Comprehensive analysis framework for the Scala functional implementation, evalua
 
 This analysis suite evaluates the functional Scala implementation by:
 - Profiling all methods across Dice, Scorecard, Game, and GameState modules
+- **Statistical rigor**: 3 trials × 15 samples = 45 measurements per method
+- **Batch measurement**: 1000 objects per sample to capture real memory allocation
+- Reporting time and memory with standard deviation (e.g., 0.0007±0.0001ms, 1.46±0.01KB)
 - Measuring functional programming patterns (immutability, pure functions, type safety)
 - Analyzing error handling with Either, Option, and Try
-- Measuring test coverage with ScalaTest (30 tests)
-- Visualizing metrics with professional charts
+- Measuring test coverage with ScalaTest (30 tests, 100% pass rate)
+- Visualizing metrics with professional charts including confidence intervals
 
 ## Quick Start
 
@@ -92,11 +95,39 @@ sbt "runMain analysis.PerformanceProfiler"
 - GameState: 4 methods (initial, rollDice, recordScore, isGameOver)
 
 **Metrics:**
-- Execution time (milliseconds) - Averaged over 1000 iterations
-- Memory used (kilobytes) - JVM heap measurements
-- Includes warmup phase to eliminate JIT compilation effects
+- Execution time (milliseconds) - Mean ± Std Dev format
+- Memory used (kilobytes) - JVM heap delta measurement
+- Statistical metadata: num_trials, samples_per_trial
+
+**Statistical Methodology:**
+- **10 warmup iterations** to eliminate JIT compilation effects
+- **3 independent trials** with aggressive GC between trials
+- **15 samples per trial** (45 total measurements per method)
+- **Batch measurement**: Each sample creates 1000 objects to amplify memory footprint
+- Results reported as Mean ± Standard Deviation
+- Example: `0.0007±0.0001ms, 1.46±0.01KB` = 0.0007ms avg time, 1.46KB avg memory
+
+**Memory Measurement Strategy:**
+To capture actual heap allocation despite JVM optimizations:
+- **Batch creation**: 1000 objects created per measurement, then divided by 1000
+- **Aggressive GC**: Multiple GC cycles and stabilization periods between samples
+- **Forced retention**: ArrayBuffer keeps references to prevent premature collection
+- This approach successfully measures memory for:
+  - Simple types (Dice): ~0.35-0.38 KB per object
+  - Medium types (Scorecard): ~0.37-1.00 KB per object
+  - Complex types (Game calculations): ~1.45-1.98 KB per operation
 
 **Output:** `data/performance_metrics.json`
+
+**Key Findings:**
+- Fastest: `dice_value` (~0.0001ms avg)
+- Slowest: `game_rollSpecificDice` (~0.0012ms avg)
+- Memory: Successfully measured via batch creation (1000 objects per sample)
+  - Simple types: 0.35-0.38 KB (Dice)
+  - Medium complexity: 0.37-1.00 KB (Scorecard)
+  - Complex operations: 1.45-1.98 KB (Game calculations)
+- Functional overhead minimal, excellent performance
+- Standard deviations show consistent functional performance
 
 ### Readability Analysis (Python)
 

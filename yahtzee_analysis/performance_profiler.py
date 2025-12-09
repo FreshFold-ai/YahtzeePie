@@ -3,6 +3,7 @@ import tracemalloc
 import json
 from pathlib import Path
 import sys
+import statistics
 
 yahtzee_game_path = Path(__file__).parent.parent / 'yahtzee_game'
 sys.path.insert(0, str(yahtzee_game_path))
@@ -11,21 +12,50 @@ from dice import Dice
 from scorecard import Scorecard
 from game import Game
 
+# Configuration for statistical accuracy
+NUM_TRIALS = 4  # Number of independent trial runs
+SAMPLES_PER_TRIAL = 21  # Number of samples per trial
+
 def profile_method(func, *args, **kwargs):
-    tracemalloc.start()
-    start_time = time.perf_counter()
-    start_memory = tracemalloc.get_traced_memory()[0]
+    """Profile a method with multiple trials and samples for statistical accuracy."""
+    all_times = []
+    all_memory = []
+    all_peak_memory = []
     
-    result = func(*args, **kwargs)
+    for trial in range(NUM_TRIALS):
+        trial_times = []
+        trial_memory = []
+        trial_peak = []
+        
+        for sample in range(SAMPLES_PER_TRIAL):
+            tracemalloc.start()
+            start_time = time.perf_counter()
+            start_memory = tracemalloc.get_traced_memory()[0]
+            
+            result = func(*args, **kwargs)
+            
+            end_time = time.perf_counter()
+            current_memory, peak_memory = tracemalloc.get_traced_memory()
+            tracemalloc.stop()
+            
+            trial_times.append((end_time - start_time) * 1000)
+            trial_memory.append((current_memory - start_memory) / 1024)
+            trial_peak.append(peak_memory / 1024)
+        
+        # Collect average from each trial
+        all_times.append(statistics.mean(trial_times))
+        all_memory.append(statistics.mean(trial_memory))
+        all_peak_memory.append(statistics.mean(trial_peak))
     
-    end_time = time.perf_counter()
-    current_memory, peak_memory = tracemalloc.get_traced_memory()
-    tracemalloc.stop()
-    
+    # Calculate statistics across all trials
     return {
-        'execution_time_ms': (end_time - start_time) * 1000,
-        'memory_used_kb': (current_memory - start_memory) / 1024,
-        'peak_memory_kb': peak_memory / 1024
+        'execution_time_ms': statistics.mean(all_times),
+        'execution_time_std': statistics.stdev(all_times) if len(all_times) > 1 else 0,
+        'memory_used_kb': statistics.mean(all_memory),
+        'memory_std_kb': statistics.stdev(all_memory) if len(all_memory) > 1 else 0,
+        'peak_memory_kb': statistics.mean(all_peak_memory),
+        'num_trials': NUM_TRIALS,
+        'samples_per_trial': SAMPLES_PER_TRIAL
     }
 
 def profile_dice():
@@ -104,6 +134,8 @@ def profile_game():
 
 def run_performance_analysis():
     print("Running performance analysis...")
+    print(f"Configuration: {NUM_TRIALS} trials × {SAMPLES_PER_TRIAL} samples per trial")
+    print("=" * 80)
     
     all_results = {
         'dice': profile_dice(),
@@ -118,14 +150,19 @@ def run_performance_analysis():
         json.dump(all_results, f, indent=2)
     
     print("\nPerformance Analysis Results:")
-    print("=" * 70)
+    print("=" * 80)
     for module, methods in all_results.items():
         print(f"\n{module.upper()}")
-        print("-" * 70)
+        print("-" * 80)
         for method, metrics in methods.items():
-            print(f"  {method:30s} | Time: {metrics['execution_time_ms']:8.4f}ms | Memory: {metrics['memory_used_kb']:8.2f}KB")
+            time_mean = metrics['execution_time_ms']
+            time_std = metrics['execution_time_std']
+            mem_mean = metrics['memory_used_kb']
+            mem_std = metrics['memory_std_kb']
+            print(f"  {method:30s} | Time: {time_mean:7.4f}±{time_std:6.4f}ms | Memory: {mem_mean:7.2f}±{mem_std:5.2f}KB")
     
     print(f"\nResults saved to: {output_dir / 'performance_metrics.json'}")
+    print(f"Statistics: Mean ± Std Dev from {NUM_TRIALS} trials")
     return all_results
 
 if __name__ == '__main__':
