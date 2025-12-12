@@ -1,4 +1,3 @@
-import random
 from dice import Dice
 from scorecard import Scorecard
 
@@ -45,9 +44,6 @@ class Game:
             self.frequency[value - 1] += 1
 
     def play(self):
-        """
-        Main game loop: 13 rounds, each player has a turn per round, 3 rolls per turn
-        """
         for round_num in range(1, 14):  
             print(f"\n{'='*60}")
             print(f"ROUND {round_num}")
@@ -129,7 +125,6 @@ class Game:
             "Yahtzee - All 5 dice the same (50 pts)",
             "Chance - Sum of all dice"
         ]
-        
         print(f"\n{'='*80}")
         print(f"Player {player_idx + 1} Scorecard")
         print(f"{'='*80}")
@@ -166,7 +161,7 @@ class Game:
         sorted_values = self.get_sorted_dice()
         freq = self.get_frequency()
         
-        # Slots 0-5: Number categories (Ones, Twos, Threes, etc.)
+        # Slots 0-5: number
         if slot_idx < 6:
             return sum(v for v in values if v == slot_idx + 1)
         
@@ -213,7 +208,6 @@ class Game:
         return 0
     
     def is_small_straight(self, sorted_values):
-        """Check if dice contain a small straight (4 consecutive)."""
         straights = [[1, 2, 3, 4], [2, 3, 4, 5], [3, 4, 5, 6]]
         for straight in straights:
             if all(num in sorted_values for num in straight):
@@ -221,5 +215,4 @@ class Game:
         return False
     
     def is_large_straight(self, sorted_values):
-        """Check if dice contain a large straight (5 consecutive)."""
         return sorted_values == [1, 2, 3, 4, 5] or sorted_values == [2, 3, 4, 5, 6]
