@@ -46,16 +46,15 @@ class Game:
 
     def play(self):
         """
-        Main game loop: 13 rounds, each player takes a turn per round.
-        Each turn consists of 3 dice rolls with the ability to keep dice between rolls.
+        Main game loop: 13 rounds, each player has a turn per round, 3 rolls per turn
         """
-        for round_num in range(1, 14):  # 13 rounds total
+        for round_num in range(1, 14):  
             print(f"\n{'='*60}")
             print(f"ROUND {round_num}")
             print(f"{'='*60}")
             for player_idx in range(self.players.num_players):
                 print(f"\n--- Player {player_idx + 1}'s Turn (Round {round_num}) ---")
-                kept_indices = set()  # Reset kept dice for new turn
+                kept_indices = set()  
                 for roll_num in range(1, 4):
                     print(f"\nRoll {roll_num}/3:")
                     if roll_num == 1:
@@ -144,16 +143,13 @@ class Game:
         print(f"{'='*80}")
     
     def get_scoring_slot_input(self, player_idx):
-        
         player_card = self.players.get_player_card(player_idx)
         self.display_scorecard(player_idx)
-        
         while True:
             try:
                 slot = int(input(
                     f"\nChoose an open scoring slot (0-12) for Player {player_idx + 1}: "
                 ))
-                
                 if 0 <= slot < 13:
                     if player_card[slot] != 0:
                         print(f"❌ Slot {slot} already used! Choose an open slot.")
@@ -166,11 +162,6 @@ class Game:
                 print("Invalid input. Please enter a number between 0 and 12.")
     
     def calculate_score(self, slot_idx):
-        """
-        Calculate the score for a given category/slot.
-        Slots 0-5: Ones through Sixes (sum of dice with that value)
-        Slots 6-12: Various Yahtzee categories
-        """
         values = self.get_dice_values()
         sorted_values = self.get_sorted_dice()
         freq = self.get_frequency()

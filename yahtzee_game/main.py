@@ -1,11 +1,8 @@
-from dice import Dice
-from scorecard import Scorecard
 from game import Game
 
 class YahtzeeGame:
     def __init__(self):
         pass
-
 
 if __name__ == "__main__":
     while True:
