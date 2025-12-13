@@ -7,9 +7,7 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 
 from scorecard import Scorecard
 
-
 class TestScorecard(unittest.TestCase):
-    """Test suite for the Scorecard class."""
     
     def test_init_single_player(self):
         """Test initializing a scorecard for a single player."""
@@ -181,7 +179,6 @@ class TestScorecard(unittest.TestCase):
         
         for slot_idx in range(13):
             self.assertEqual(scorecard.get_score(0, slot_idx), slot_idx * 5)
-
 
 if __name__ == '__main__':
     unittest.main()
